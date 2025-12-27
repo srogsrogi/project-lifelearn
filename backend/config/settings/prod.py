@@ -11,7 +11,8 @@ import logging
 
 DEBUG = False
 
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",")
+# ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",")
+ALLOWED_HOSTS = ["*"]
 
 # Elasticsearch (Docker 환경)
 ELASTICSEARCH_URL = os.environ.get("ES_URL", "http://elasticsearch:9200")

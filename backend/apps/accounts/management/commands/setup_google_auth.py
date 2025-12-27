@@ -15,14 +15,19 @@ class Command(BaseCommand):
             return
 
         # 1. Site 설정 (ID=1 기본 사이트)
+        # 환경 변수로부터 도메인 가져오기 (기본값: localhost)
+        site_domain = os.environ.get('SITE_DOMAIN', 'http://localhost').replace('http://', '').replace('https://', '')
+
         site, created = Site.objects.get_or_create(
             id=1,
-            defaults={'domain': 'localhost', 'name': 'localhost'}
+            defaults={'domain': site_domain, 'name': site_domain}
         )
-        if not created and (site.domain != 'localhost' or site.name != 'localhost'):
-            site.domain = 'localhost'
-            site.name = 'localhost'
+        # 도메인이 환경 변수와 다르면 업데이트
+        if site.domain != site_domain or site.name != site_domain:
+            site.domain = site_domain
+            site.name = site_domain
             site.save()
+            self.stdout.write(self.style.SUCCESS(f'Updated Site domain to: {site_domain}'))
 
         # 2. SocialApp 설정
         app, created = SocialApp.objects.update_or_create(

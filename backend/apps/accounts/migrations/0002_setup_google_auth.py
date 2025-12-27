@@ -9,9 +9,13 @@ def create_social_app(apps, schema_editor):
 
     # 1. Site 설정
     # 기본으로 생성되는 ID 1번 사이트 생성
+    # 환경 변수로부터 도메인 가져오기 (기본값: localhost)
+    import os
+    site_domain = os.environ.get('SITE_DOMAIN', 'http://localhost').replace('http://', '').replace('https://', '')
+
     site, created = Site.objects.get_or_create(id=1)
-    site.domain = 'localhost'
-    site.name = 'localhost'
+    site.domain = site_domain
+    site.name = site_domain
     site.save()
 
     # 2. SocialApp 설정

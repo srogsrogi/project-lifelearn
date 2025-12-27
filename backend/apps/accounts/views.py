@@ -1,5 +1,6 @@
 # backend/apps/accounts/views.py
 
+import os
 from django.shortcuts import render
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
@@ -8,8 +9,11 @@ from dj_rest_auth.registration.views import SocialLoginView
 class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
     client_class = OAuth2Client
-    # TODO: 프론트엔드 URL로 변경 필요
-    # dj-rest-auth의 기본 동작상 access_token만으로 처리되므로 필수 항목은 아님.
-    # TODO: console.cloud.google.com/에 일치하게 등록해두었는지 확인 필요
-    callback_url = "http://localhost/api/v1/accounts/google/login/callback/" 
+    # 환경 변수로부터 사이트 도메인을 가져와서 callback URL 생성
+    # 로컬: http://localhost, 프로덕션: https://life-learn.site
+    # console.cloud.google.com/에 승인된 리디렉션 URI로 등록되어 있어야 함
+    @property
+    def callback_url(self):
+        site_domain = os.environ.get('SITE_DOMAIN', 'http://localhost')
+        return f"{site_domain}/api/v1/accounts/google/login/callback/" 
     

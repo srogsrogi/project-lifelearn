@@ -4,7 +4,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
-RUN npm run build
+# Vite 빌드 시 --mode prod 옵션으로 .env.prod 파일 사용
+RUN npm run build -- --mode prod
 
 # Production Stage (Nginx)
 FROM nginx:alpine AS production-stage
