@@ -84,6 +84,7 @@ class CourseListView(generics.ListAPIView):
 
     serializer_class = CourseListSerializer
     permission_classes = [AllowAny]
+    authentication_classes = []
     pagination_class = CourseListPagination
 
     def get_queryset(self):
@@ -241,6 +242,7 @@ class CourseDetailView(generics.RetrieveAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseDetailSerializer
     permission_classes = [AllowAny]
+    authentication_classes = []
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -251,6 +253,7 @@ class CourseDetailView(generics.RetrieveAPIView):
 class CourseReviewListView(generics.ListAPIView):
     serializer_class = CourseReviewSerializer
     permission_classes = [AllowAny]
+    authentication_classes = []
 
     def get_queryset(self):
         course_id = self.kwargs.get('course_id')
@@ -267,6 +270,7 @@ ES_CLIENT = Elasticsearch(getattr(settings, 'ELASTICSEARCH_URL', 'http://elastic
 # 2.3 CourseRecommendationView | 추천 강의 조회
 class CourseRecommendationView(APIView):
     permission_classes = [AllowAny]
+    authentication_classes = []
 
     def get(self, request, course_id):
         target_course = get_object_or_404(Course, id=course_id)
@@ -342,6 +346,7 @@ class CourseKeywordSearchView(APIView):
     - 중복 제거 (같은 이름+교수 조합)
     """
     permission_classes = [AllowAny]
+    authentication_classes = []
 
     def _build_es_filters(self):
         """ES query용 필터 조건 생성"""
@@ -467,6 +472,7 @@ class CourseSemanticSearchView(APIView):
     CourseRecommendationView와 로직이 유사하나 변경 가능성이 있어 완전 분리하여 설계함
     """
     permission_classes = [AllowAny]
+    authentication_classes = []
 
     def _get_embedding(self, text):
         """내부용 임베딩 생성 메서드"""
