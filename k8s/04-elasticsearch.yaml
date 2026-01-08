@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lifelearn-es
+  namespace: lifelearn
+  labels:
+    app: lifelearn-es
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lifelearn-es
+  template:
+    metadata:
+      labels:
+        app: lifelearn-es
+    spec:
+      containers:
+      - name: elasticsearch
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+        ports:
+        - containerPort: 9200
+        env:
+        - name: discovery.type
+          value: "single-node"
+        - name: xpack.security.enabled
+          value: "false"
+        - name: ES_JAVA_OPTS
+          value: "-Xms2g -Xmx2g" # 필요시 4g, 8g로 증설
+        - name: indices.memory.index_buffer_size
+          value: "30%"
+        volumeMounts:
+        - name: es-data
+          mountPath: /usr/share/elasticsearch/data
+        # 플러그인 설치 및 실행 커맨드
+        command:
+        - /bin/sh
+        - -c
+        - |
+          ./bin/elasticsearch-plugin list | grep -q analysis-nori || ./bin/elasticsearch-plugin install analysis-nori;
+          /usr/local/bin/docker-entrypoint.sh elasticsearch
+      volumes:
+      - name: es-data
+        persistentVolumeClaim:
+          claimName: es-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lifelearn-es
+  namespace: lifelearn
+spec:
+  selector:
+    app: lifelearn-es
+  ports:
+    - protocol: TCP
+      port: 9200
+      targetPort: 9200

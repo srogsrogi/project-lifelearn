@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lifelearn-backend
+  namespace: lifelearn
+  labels:
+    app: lifelearn-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lifelearn-backend
+  template:
+    metadata:
+      labels:
+        app: lifelearn-backend
+    spec:
+      # 초기화 컨테이너: DB와 ES가 준비될 때까지 대기
+      initContainers:
+      - name: wait-for-deps
+        image: busybox
+        command: ['sh', '-c', 'until nc -z lifelearn-db 5432; do echo waiting for db; sleep 2; done; until nc -z lifelearn-es 9200; do echo waiting for es; sleep 2; done;']
+      
+      containers:
+      - name: backend
+        # [중요] 실제 빌드한 이미지 주소로 변경 필요 (예: gcr.io/my-project/backend:latest)
+        image: gcr.io/gmailmcp-478312/lifelearn-backend:latest
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - configMapRef:
+            name: lifelearn-config
+        - secretRef:
+            name: lifelearn-secret
+        volumeMounts:
+        - name: backend-data
+          mountPath: /data
+        
+        # 서버 시작 명령어 (마이그레이션 포함)
+        command:
+        - /bin/sh
+        - -c
+        - |
+          python manage.py makemigrations && 
+          export PGPASSWORD=$POSTGRES_PASSWORD
+          psql -h $POSTGRES_HOST -U $POSTGRES_USER -d $POSTGRES_DB -c 'CREATE EXTENSION IF NOT EXISTS vector;'
+          python manage.py migrate && 
+          python manage.py setup_google_auth && 
+          gunicorn --bind 0.0.0.0:8000 --timeout 600 config.wsgi:application
+          
+      volumes:
+      - name: backend-data
+        persistentVolumeClaim:
+          claimName: backend-data-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: lifelearn
+spec:
+  selector:
+    app: lifelearn-backend
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
