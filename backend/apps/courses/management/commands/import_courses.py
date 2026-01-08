@@ -127,11 +127,21 @@ class Command(BaseCommand):
                     'embedding': embedding,
                 }
 
-                # kmooc_id 기준으로 업데이트 또는 생성
-                obj, created = Course.objects.update_or_create(
-                    kmooc_id=kmooc_id,
-                    defaults=course_fields
-                )
+                # pk (ID) 추출 - Django dumpdata 포맷은 'pk' 키에 ID가 있음
+                pk = course_data.get('pk')
+
+                if pk:
+                    # ID가 있으면 ID로 update_or_create (ID 유지하여 리뷰 데이터와 연결)
+                    obj, created = Course.objects.update_or_create(
+                        id=pk,
+                        defaults={**course_fields, 'kmooc_id': kmooc_id}
+                    )
+                else:
+                    # kmooc_id 기준으로 업데이트 또는 생성
+                    obj, created = Course.objects.update_or_create(
+                        kmooc_id=kmooc_id,
+                        defaults=course_fields
+                    )
 
                 if created:
                     created_count += 1
