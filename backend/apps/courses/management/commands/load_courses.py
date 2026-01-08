@@ -12,11 +12,24 @@ csv.field_size_limit(sys.maxsize)
 class Command(BaseCommand):
     help = 'Import KMOOC courses from CSV file'
 
-    def handle(self, *args, **kwargs):
-        # CSV 파일 경로 (프로젝트 루트 기준 data/backups/kmooc_processed_data.csv)
-        base_dir = settings.BASE_DIR  # backend/
-        project_root = base_dir.parent # project-moduway/
-        csv_path = os.path.join(project_root, 'data', 'backups', 'kmooc_processed_data.csv')
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--path',
+            type=str,
+            help='Path to the CSV file'
+        )
+
+    def handle(self, *args, **options):
+        # CSV 파일 경로 설정
+        path_arg = options.get('path')
+        
+        if path_arg:
+            csv_path = path_arg
+        else:
+            # 기본 경로 (프로젝트 루트 기준)
+            base_dir = settings.BASE_DIR
+            project_root = base_dir.parent
+            csv_path = os.path.join(project_root, 'data', 'backups', 'kmooc_processed_data.csv')
 
         if not os.path.exists(csv_path):
             self.stdout.write(self.style.ERROR(f'CSV file not found at: {csv_path}'))
