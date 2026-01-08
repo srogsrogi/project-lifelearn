@@ -5,8 +5,16 @@ from django.conf import settings
 class Command(BaseCommand):
     help = 'Elasticsearch 인덱스 및 Nori 분석기 설정을 생성합니다.'
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--url',
+            type=str,
+            help='Elasticsearch URL (e.g., http://localhost:9200)'
+        )
+
     def handle(self, *args, **options):
-        base_url = getattr(settings, 'ELASTICSEARCH_URL', 'http://elasticsearch:9200')
+        url_arg = options.get('url')
+        base_url = url_arg or getattr(settings, 'ELASTICSEARCH_URL', 'http://elasticsearch:9200')
         es_url = f"{base_url}/kmooc_courses"
         config = {
             "settings": {

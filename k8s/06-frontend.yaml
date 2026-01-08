@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lifelearn-frontend
+  namespace: lifelearn
+  labels:
+    app: lifelearn-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lifelearn-frontend
+  template:
+    metadata:
+      labels:
+        app: lifelearn-frontend
+    spec:
+      containers:
+      - name: frontend
+        # [중요] 실제 빌드한 이미지 주소로 변경 필요
+        image: gcr.io/gmailmcp-478312/lifelearn-frontend:latest
+        ports:
+        - containerPort: 80
+        
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lifelearn-frontend
+  namespace: lifelearn
+spec:
+  # 외부 접속 허용 (로드밸런서 IP 할당)
+  type: LoadBalancer
+  selector:
+    app: lifelearn-frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80

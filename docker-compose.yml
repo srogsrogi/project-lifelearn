@@ -2,7 +2,7 @@ services:
   # PostgreSQL Database
   db:
     image: ankane/pgvector:latest # pgvector 확장자가 포함된 PostgreSQL 이미지
-    container_name: moduway-db
+    container_name: lifelearn-db
     restart: always
     env_file:
       # 운영 환경 변수 파일
@@ -18,12 +18,12 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - moduway-net
+      - lifelearn-net
 
   # Elasticsearch (검색 & 벡터 서치)
   elasticsearch:
       image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
-      container_name: moduway-es
+      container_name: lifelearn-es
       environment:
         - discovery.type=single-node
         - xpack.security.enabled=false
@@ -37,7 +37,7 @@ services:
       volumes:
         - es_data:/usr/share/elasticsearch/data
       networks:
-        - moduway-net
+        - lifelearn-net
       
       # 스왑 방지
       ulimits:
@@ -62,7 +62,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: moduway-backend
+    container_name: lifelearn-backend
     restart: always
     volumes:
       - ./backend:/app #TODO 로컬 코드 변경 반영용. 운영 환경에서는 제거 필요
@@ -78,7 +78,7 @@ services:
       # 운영 환경 변수 파일
       - .env.prod
     networks:
-      - moduway-net
+      - lifelearn-net
     # 마이그레이션 시 vector 확장 설치여부 확인 후 gunicorn 서버 실행
     # URL 형식을 사용하여 psql이 네트워크를 통해 db 컨테이너에 접속하도록 수정
     command: >
@@ -91,21 +91,21 @@ services:
   # Frontend (Vue.js + Nginx)
   frontend:
     build:
-      context: ./frontend/project-moduway
+      context: ./frontend/project-lifelearn
       dockerfile: Dockerfile
-    container_name: moduway-frontend
+    container_name: lifelearn-frontend
     restart: always
     ports:
       - "80:80"
     depends_on:
       - backend
     networks:
-      - moduway-net
+      - lifelearn-net
 
 volumes:
   postgres_data:
   es_data:
 
 networks:
-  moduway-net:
+  lifelearn-net:
     driver: bridge

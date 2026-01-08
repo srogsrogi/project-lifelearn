@@ -39,9 +39,17 @@ DATABASES = {
     }
 }
 
-# 로그 디렉토리 생성
-LOG_DIR = BASE_DIR / "logs"
-LOG_DIR.mkdir(exist_ok=True)
+# 로그 디렉토리 생성 (운영 환경: /data/logs)
+DATA_DIR = Path("/data")
+LOG_DIR = DATA_DIR / "logs"
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+# 미디어 파일 (사용자 업로드) 및 정적 파일 경로
+MEDIA_ROOT = DATA_DIR / "media"
+MEDIA_URL = "/media/"
+
+STATIC_ROOT = DATA_DIR / "static"
+STATIC_URL = "/static/"
 
 # Django 로깅: 콘솔 + 파일(7일 보관)
 LOGGING = {

@@ -574,299 +574,98 @@ python manage.py train_sentiment_model
 
 ---
 
-## 실행 방법
+## 실행 방법 (Docker 환경 권장)
 
-### 사전 요구사항
+본 프로젝트는 Docker Compose를 이용한 실행을 권장합니다. 복잡한 환경 설정 없이 데이터베이스, 검색엔진, 백엔드, 프론트엔드를 한 번에 실행할 수 있습니다.
 
-- **로컬 실행**: Python 3.11+, PostgreSQL, ElasticSearch
-- **Docker 실행**: Docker, Docker Compose
+### 1. 환경 변수 설정
 
----
-
-### 1. 로컬 환경 실행
-
-#### 1.1 환경 변수 설정
+프로젝트 루트에서 `.env` 파일을 생성하고 필요한 값을 설정합니다.
 
 ```bash
-# 프로젝트 루트에서 .env 파일 생성
 cp .env.example .env
 ```
 
-`.env` 파일 예시:
+`.env` 필수 설정 예시:
 ```env
-# Django 설정
-SECRET_KEY=your-secret-key-here
-DJANGO_SETTINGS_MODULE=config.settings
+# Django
+SECRET_KEY=your-secret-key
+DJANGO_SETTINGS_MODULE=config.settings.prod  # 또는 dev
 
-# Google OAuth 2.0
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_SECRET_KEY=your-google-secret-key
-
-# PostgreSQL
+# Database & Search
 POSTGRES_DB=moduway_db
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=your-password
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
-
-# ElasticSearch
-ES_URL=http://localhost:9200
-
-# 타임존
-TZ=Asia/Seoul
-```
-
-#### 1.2 PostgreSQL 설치 및 설정
-
-```bash
-# macOS (Homebrew)
-brew install postgresql@14
-brew services start postgresql@14
-
-# Ubuntu/Debian
-sudo apt-get install postgresql postgresql-contrib
-
-# PostgreSQL 데이터베이스 생성
-psql -U postgres
-CREATE DATABASE moduway_db;
-CREATE EXTENSION vector;  # pgvector 확장 설치
-\q
-```
-
-#### 1.3 ElasticSearch 설치 및 실행
-
-```bash
-# macOS (Homebrew)
-brew install elasticsearch
-brew services start elasticsearch
-
-# Ubuntu/Debian
-wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-8.11.1-linux-x86_64.tar.gz
-tar -xzf elasticsearch-8.11.1-linux-x86_64.tar.gz
-cd elasticsearch-8.11.1/
-./bin/elasticsearch
-
-# Nori 형태소 분석기 설치
-./bin/elasticsearch-plugin install analysis-nori
-```
-
-#### 1.4 Backend 실행
-
-```bash
-# 백엔드 디렉토리 이동
-cd backend
-
-# 가상환경 생성 및 활성화
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# 의존성 설치
-pip install -r requirements.txt
-
-# 데이터베이스 마이그레이션
-python manage.py makemigrations
-python manage.py migrate
-
-# Google OAuth 설정 (자동 Site 생성)
-python manage.py setup_google_auth
-
-# 강좌 데이터 로드 (선택사항)
-python manage.py load_courses /path/to/course_data.csv
-
-# ElasticSearch 인덱싱 (선택사항)
-python manage.py index_courses
-
-# 개발 서버 실행
-python manage.py runserver
-```
-
-서버 접속: `http://localhost:8000`
-
-#### 1.5 Frontend 실행
-
-```bash
-# 프론트엔드 디렉토리 이동
-cd frontend/project-moduway
-
-# 의존성 설치
-npm install
-
-# 개발 서버 실행
-npm run dev
-```
-
-프론트엔드 접속: `http://localhost:5173` (또는 Vue.js 설정에 따라)
-
----
-
-### 2. Docker 환경 실행 (권장)
-
-Docker를 사용하면 복잡한 환경 설정 없이 한 번에 실행할 수 있습니다.
-
-#### 2.1 환경 변수 설정
-
-```bash
-# 프로젝트 루트에서 .env 파일 생성
-cp .env.example .env
-```
-
-`.env` 파일 예시 (Docker 환경):
-```env
-# Django 설정
-SECRET_KEY=your-secret-key-here
-DJANGO_SETTINGS_MODULE=config.settings
-
-# Google OAuth 2.0
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_SECRET_KEY=your-google-secret-key
-
-# PostgreSQL (Docker 컨테이너)
-POSTGRES_DB=moduway_db
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=your-password
-POSTGRES_HOST=db  # Docker Compose 서비스 이름
-POSTGRES_PORT=5432
-
-# ElasticSearch (Docker 컨테이너)
+POSTGRES_HOST=db
 ES_URL=http://elasticsearch:9200
 
-# 타임존
-TZ=Asia/Seoul
+# OAuth & AI API
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_SECRET_KEY=your-google-secret-key
+GMS_KEY=your-openai-api-key  # 임베딩 및 AI 리뷰 생성용
 ```
 
-#### 2.2 Docker Compose 실행
+### 2. 서비스 실행
 
 ```bash
-# 프로젝트 루트에서 실행
-docker-compose up -d
+# 이미지 빌드 및 실행 (백그라운드)
+docker-compose up -d --build
 
 # 로그 확인
 docker-compose logs -f
-
-# 특정 서비스 로그만 확인
-docker-compose logs -f backend
 ```
 
-#### 2.3 컨테이너 구성
+### 3. 데이터 구축 가이드 (필수)
 
-Docker Compose는 다음 서비스를 자동으로 실행합니다:
+초기 실행 시 DB와 검색엔진이 비어있습니다. **반드시 아래 순서대로** 명령어를 실행하여 데이터를 구축해주세요.
 
-1. **db** (PostgreSQL + pgvector)
-   - Port: 5432
-   - 자동으로 pgvector 확장 설치
-
-2. **elasticsearch**
-   - Port: 9200
-   - Nori 형태소 분석기 자동 설치
-   - 메모리: 8GB 할당
-
-3. **backend** (Django)
-   - Port: 8000
-   - Gunicorn WSGI 서버
-   - 자동 마이그레이션 수행
-
-4. **frontend** (Vue.js + Nginx)
-   - Port: 80
-   - Nginx로 정적 파일 서빙
-
-#### 2.4 초기 데이터 로드 (선택사항)
-
+**1) Backend 컨테이너 접속**
 ```bash
-# Backend 컨테이너에 접속
 docker-compose exec backend bash
-
-# 강좌 데이터 로드
-python manage.py load_courses /data/course_data.csv
-
-# ElasticSearch 인덱싱
-python manage.py index_courses
-
-# AI 리뷰 생성 (OpenAI API 필요)
-python manage.py generate_ai_reviews
-
-# 테스트 데이터 생성
-python manage.py load_custom_seeds
-
-# 컨테이너에서 나가기
-exit
 ```
 
-#### 2.5 서비스 접속
-
-- **프론트엔드**: `http://localhost`
-- **백엔드 API**: `http://localhost:8000`
-- **API 문서 (Swagger)**: `http://localhost:8000/api/schema/swagger-ui/`
-- **API 문서 (ReDoc)**: `http://localhost:8000/api/schema/redoc/`
-- **ElasticSearch**: `http://localhost:9200`
-
-#### 2.6 Docker 서비스 관리
-
+**2) 초기 설정**
 ```bash
-# 모든 서비스 중지
-docker-compose stop
+# DB 마이그레이션
+python manage.py migrate
 
-# 모든 서비스 재시작
-docker-compose restart
-
-# 특정 서비스만 재시작
-docker-compose restart backend
-
-# 모든 서비스 및 볼륨 삭제 (주의: 데이터 손실)
-docker-compose down -v
-
-# 이미지 재빌드
-docker-compose build
-
-# 재빌드 후 실행
-docker-compose up -d --build
+# 구글 소셜 로그인 설정 (Site 등록 등)
+python manage.py setup_google_auth
 ```
 
----
-
-### 3. 주요 Management Commands
-
-#### 3.1 강좌 데이터 관리
-
+**3) 강좌 데이터 적재 (순서 중요)**
 ```bash
-# 강좌 데이터 로드
-python manage.py load_courses /path/to/course_data.csv
+# 1. 기본 강좌 데이터 로드 (CSV -> DB)
+# data/backups/kmooc_processed_data.csv 파일을 읽어 DB에 저장합니다.
+python manage.py load_courses
 
-# ElasticSearch 인덱싱
-python manage.py index_courses
+# 2. 강좌 임베딩 생성 (DB -> OpenAI API -> DB)
+# *GMS_KEY 환경변수 필요*
+python manage.py make_embeddings
 
-# 강좌 데이터 업데이트
-python manage.py update_courses
+# 3. ElasticSearch 인덱스 설정
+# Nori 형태소 분석기 및 매핑 설정
+python manage.py setup_es
+
+# 4. 데이터 동기화 (DB -> ElasticSearch)
+python manage.py push_to_es
 ```
 
-#### 3.2 AI/ML 관련
-
+**4) AI 분석 모델 구축 (선택 사항)**
 ```bash
-# AI 리뷰 생성 (OpenAI API)
+# AI 강좌 리뷰/요약 생성 (OpenAI API 활용)
 python manage.py generate_ai_reviews
 
 # 감성 분석 모델 학습
-python manage.py train_sentiment_model
-
-# 강좌 임베딩 생성
-python manage.py generate_embeddings
+python manage.py train_model
 ```
 
-#### 3.3 테스트 데이터 생성
+### 4. 서비스 접속
 
-```bash
-# 활성 유저 시뮬레이션 데이터 생성
-python manage.py load_custom_seeds
-
-# 더미 데이터 생성 (Faker)
-python manage.py generate_fake_data
-```
-
-#### 3.4 인증 설정
-
-```bash
-# Google OAuth 자동 설정
-python manage.py setup_google_auth
-```
+- **Frontend**: `http://localhost`
+- **Backend API**: `http://localhost:8000`
+- **Swagger Docs**: `http://localhost:8000/api/schema/swagger-ui/`
+- **ElasticSearch**: `http://localhost:9200`
 
 ## 프로젝트 구조
 

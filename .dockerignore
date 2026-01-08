@@ -9,6 +9,7 @@ __pycache__/
 # 환경 변수 / 설정
 .env
 *.env
+**/*.env
 .DS_Store
 
 # Git

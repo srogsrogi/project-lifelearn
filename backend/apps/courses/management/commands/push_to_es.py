@@ -7,8 +7,16 @@ from apps.courses.models import Course
 class Command(BaseCommand):
     help = 'DB의 데이터를 Elasticsearch로 벌크 전송합니다.'
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--url',
+            type=str,
+            help='Elasticsearch URL (e.g., http://localhost:9200)'
+        )
+
     def handle(self, *args, **options):
-        base_url = getattr(settings, 'ELASTICSEARCH_URL', 'http://elasticsearch:9200')
+        url_arg = options.get('url')
+        base_url = url_arg or getattr(settings, 'ELASTICSEARCH_URL', 'http://elasticsearch:9200')
         # 벌크 전송 엔드포인트는 /_bulk 입니다.
         es_bulk_url = f"{base_url}/_bulk"
 

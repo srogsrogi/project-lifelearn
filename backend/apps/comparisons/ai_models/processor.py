@@ -90,19 +90,25 @@ class SentimentProcessor:
         - joblib으로 저장된 sklearn Pipeline 로드
         - 모델 메타데이터(JSON) 함께 로드
         """
-        # 현재 파일 기준 경로 설정
-        base_dir = Path(__file__).resolve().parent
+        # 운영 환경: /data/models 경로 우선 탐색
+        model_dir = Path('/data/models')
+        
+        # 만약 /data/models가 없으면(로컬 개발 등) 현재 경로 사용
+        if not model_dir.exists():
+             model_dir = Path(__file__).resolve().parent
+
         # 모델 및 메타데이터 경로
-        model_path = base_dir / 'sentiment_pipeline.joblib'
-        metadata_path = base_dir / 'model_metadata.json'
+        model_path = model_dir / 'sentiment_pipeline.joblib'
+        metadata_path = model_dir / 'model_metadata.json'
 
         # 예외 처리
         if not model_path.exists():
-            logger.error(f"Model file not found: {model_path}")
-            raise FileNotFoundError(
-                f"감성분석 모델 파일을 찾을 수 없습니다!!! : {model_path}\n"
-                f"'python manage.py train_model' 명령으로 모델을 학습해주세요."
-            )
+            # 모델 파일이 없을 경우 로그만 남기고 패스 (서버 부팅 실패 방지)
+            # 단, analyze 호출 시에는 에러가 발생하거나 기본값 반환됨
+            logger.warning(f"Sentiment model not found at {model_path}. Analysis will return default values.")
+            self._pipeline = None
+            self._metadata = {}
+            return
 
         # 모델 및 메타데이터 로드
         try:
